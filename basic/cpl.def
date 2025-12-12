@@ -10,7 +10,7 @@
 #
 # ---------------------------------------------------------------------------
 Bootstrap: localimage
-From: containers/basic/{{ OS_DISTRO }}-{{ OS_VERSION }}-{{MPI_IMPLEMENTATION}}-{{ MPI_VERSION }}.sif
+From: {{ CONTAINERS_DIR }}/basic/{{ OS_DISTRO }}-{{ OS_VERSION }}-{{MPI_IMPLEMENTATION}}-{{ MPI_VERSION }}.sif
 
 %arguments
     OS_DISTRO=ubuntu

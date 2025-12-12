@@ -75,7 +75,7 @@ From: {{ CONTAINERS_DIR }}/basic/{{ BASE_CONTAINER }}.sif
     cd /usr/lib/openfoam/openfoam{{ OPENFOAM_VERSION }}
     openfoam_commit=$(git rev-parse --short HEAD)
     git config --global user.email "me@example.com"
-    git config --global user.name "Elwardi"
+    git config --global user.name "me"
     git am -3 /opt/patches/0001-fix-working-with-CPL.patch
     git am -3 /opt/patches/0002-fix-compile-on-newer-compilers.patch
     sed -i 's/export WM_MPLIB=SYSTEMOPENMPI/export WM_MPLIB=SYSTEMMPI/' etc/bashrc
@@ -87,50 +87,27 @@ From: {{ CONTAINERS_DIR }}/basic/{{ BASE_CONTAINER }}.sif
     source etc/bashrc
     export FOAM_CPL_APP_LIBBIN=${FOAM_LIBBIN}
     ./Allwmake -j$(nproc)
-    jq --arg app vtk --arg version {{ VTK_VERSION }} \
-        --arg path /opt/VTK-{{ VTK_VERSION }} \
-        '.[$app] |= if . == null then
-        {
-            version: $commit,
-            path: $path,
-        }
-        else . +
-        {
-            version: $commit,
-            path: $path,
-        } end' /apps.json > /tmp/apps.json
-    mv /tmp/apps.json /apps.json
-    jq --arg app openfoam --arg commit $openfoam_commit \
-        '.[$app] |= if . == null then
-        {
-            commit: $commit,
-            patches_path: "/opt/patches",
-            path: "/usr/lib/openfoam/openfoam{{ OPENFOAM_VERSION }}",
-            version: "{{ OPENFOAM_VERSION }}"
-        }
-        else . +
-        {
-            commit: $commit,
-            path: "/usr/lib/openfoam/openfoam{{ OPENFOAM_VERSION }}",
-            patches_path: "/opt/patches",
-            version: "{{ OPENFOAM_VERSION }}"
-        } end' /apps.json > /tmp/apps.json
-    mv /tmp/apps.json /apps.json
-    jq --arg app lammps --arg commit $lammps_commit \
-        '.[$app] |= if . == null then
-        {
-            commit: $commit,
-            path: "/opt/lammps",
-            version: "{{ LAMMPS_VERSION }}"
-        }
-        else . +
-        {
-            commit: $commit,
-            path: "/opt/lammps",
-            version: "{{ LAMMPS_VERSION }}"
-        } end' /apps.json > /tmp/apps.json
-    mv /tmp/apps.json /apps.json
-    info
+
+    # Install CPL APP for OpenFOAM -----------
+    # cd /opt/
+    # git clone https://github.com/Crompulence/CPL_APP_OPENFOAM cpl_app_openfoam
+    # cd cpl_app_openfoam
+        # #  find . -name options -exec sed -i 's;$(FOAM_CPL_APP_SRC)/CPLPstream/lnInclude;$(LIB_SRC)/Pstream/mpi/lnInclude;' {} \;
+    # source SOURCEME.sh; 
+    # wmake src/CPLSocketFOAM
+    # wmake src/solvers/CPLTestFoam
+        # # cd examples/CPLTestFoam && ./run.sh
+
+
+    # Install LAMMPS APP for LAMMPS-----------
+    # cd /opt/
+    # git https://github.com/Crompulence/CPL_APP_LAMMPS-DEV clone cpl_app_lammps
+    # source SOURCEME.sh
+    # echo "/opt/lammps/" > CODE_INST_DIR
+        # # optionally change ./config/lammps_packages.in
+    # cd config 
+    # ./enable-packages.sh make
+    # make
 
 %environment
     export MPI_ROOT="/opt/mpich"
@@ -138,6 +115,7 @@ From: {{ CONTAINERS_DIR }}/basic/{{ BASE_CONTAINER }}.sif
     export MPI_ARCH_LIBS="-L/opt/mpich/lib -lmpi"
     export MPI_ARCH_FLAGS="-DOMPI_SKIP_MPICXX"
     export PATH=/opt/lammps/bin:$PATH
+    export CPL_PATH="/opt/cpl"
     export FOAM_INSTALL_DIR=/usr/lib/openfoam/openfoam{{ OPENFOAM_VERSION }}
 
 %runscript

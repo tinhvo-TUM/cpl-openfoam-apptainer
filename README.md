@@ -45,7 +45,7 @@ Now to use the container via 2 methods
     git clone https://github.com/FoamScience/cpl-openfoam-containers
     cd cpl-openfoam-containers
     ansible-playbook /tmp/tainers/build.yaml --extra-vars "original_dir=$PWD" --extra-vars "@config.yaml"
-    # Now a container is made in ./images/projects/
+    # Now a container is made in ./containers/projects/
     ```
     2. Run the `source enter_container.sh` script 
     3. Type `run_cpl`, then press tab
@@ -56,9 +56,14 @@ Now to use the container via 2 methods
 # change to the repo directory
 # Get the container
 apptainer pull cpl-openfoam-lammps-2112-fcbc37d5a40e6dbd91148921378d28fca5294675-8.2.0.sif oras://ghcr.io/foamscience/cpl-openfoam-lammps-2112-fcbc37d5a40e6dbd91148921378d28fca5294675-8.2.0:latest
+```
 
-# enter the container
-apptainer run --hostname cpl --sharens cpl-openfoam-lammps-2112-fcbc37d5a40e6dbd91148921378d28fca5294675-8.2.0.sif
+Now , you can enter the .sif image as: `apptainer run --hostname cpl --sharens cpl-openfoam-lammps-2112-fcbc37d5a40e6dbd91148921378d28fca5294675-8.2.0.sif`
+
+---
+
+TBD Additionally, Applications for LAMMPS and openFOAM needs to be called
+```bash
 # get cpl oF socket
 git clone https://github.com/Crompulence/CPL_APP_OPENFOAM
 cd CPL_APP_OPENFOAM

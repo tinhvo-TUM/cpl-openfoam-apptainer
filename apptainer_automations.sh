@@ -4,7 +4,7 @@
 get_tainers()
 {
     rm -rf /tmp/tainers
-    git clone https://github.com/FoamScience/openfoam-apptainer-packaging /tmp/tainers
+    git clone https://github.com/FoamScience/openfoam-apptainer-packaging --branch v1 /tmp/tainers
 }
 
 build_cpl()
