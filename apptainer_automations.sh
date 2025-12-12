@@ -9,7 +9,6 @@ get_tainers()
 
 build_cpl()
 {
-    # TOD unclear if 
     ansible-playbook /tmp/tainers/build.yaml --extra-vars "original_dir=$PWD" --extra-vars "@config.yaml"
 }
 
@@ -30,7 +29,7 @@ run_cpl()
 
 _run_cpl_autocomplete() {
     local cur=${COMP_WORDS[COMP_CWORD]}
-    COMPREPLY=( $(compgen -f ./containers/projects/) )
+    COMPREPLY=( $(compgen -f ./images/projects/) )
 }
 
 complete -F _run_cpl_autocomplete run_cpl

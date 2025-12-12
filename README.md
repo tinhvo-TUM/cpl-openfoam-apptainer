@@ -45,7 +45,7 @@ Now to use the container via 2 methods
     git clone https://github.com/FoamScience/cpl-openfoam-containers
     cd cpl-openfoam-containers
     ansible-playbook /tmp/tainers/build.yaml --extra-vars "original_dir=$PWD" --extra-vars "@config.yaml"
-    # Now a container is made in ./containers/projects/
+    # Now a container is made in ./images/projects/
     ```
     2. Run the `source enter_container.sh` script 
     3. Type `run_cpl`, then press tab
