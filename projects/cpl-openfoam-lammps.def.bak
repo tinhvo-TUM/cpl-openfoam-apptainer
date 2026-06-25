@@ -22,8 +22,15 @@ From: {{ CONTAINERS_DIR }}/basic/{{ BASE_CONTAINER }}.sif
 %files
     {{ CONTAINERS_DIR }}/../partials/0001-fix-working-with-CPL.patch /opt/patches/0001-fix-working-with-CPL.patch
     {{ CONTAINERS_DIR }}/../partials/0002-fix-compile-on-newer-compilers.patch /opt/patches/0002-fix-compile-on-newer-compilers.patch
-
+	
 %post -c /bin/bash
+    DEBIAN_FRONTEND=noninteractive
+     apt-get update
+     apt install -y --no-install-recommends --fix-missing --fix-broken\
+        libfftw3-dev libjpeg-dev libpng-dev cmake zlib1g-dev m4 \
+        flex libfl-dev cmake bison libopenblas-dev liblapack-dev \
+        libglu1-mesa-dev freeglut3-dev
+
     # Compile VTK with MPICH
     # cd /opt
     # vtk_short=$(echo {{ VTK_VERSION }} | cut -d '.' -f 1-2)
@@ -56,45 +63,88 @@ From: {{ CONTAINERS_DIR }}/basic/{{ BASE_CONTAINER }}.sif
    	#   	-DBUILD_MPI=on -DBUILD_OMP=off -DBUILD_LIB=on -DFFT=FFTW3 ../cmake
     # make -j$(nproc)
     # make install
- 
+
     # Install OpenFOAM -----------
     git clone --branch OpenFOAM-v{{ OPENFOAM_VERSION }} \
-        --depth 1 https://gitlab.com/openfoam/core/openfoam.git /usr/lib/openfoam/openfoam{{ OPENFOAM_VERSION }}
-    cd /usr/lib/openfoam/openfoam{{ OPENFOAM_VERSION }}
+        --depth 1 https://gitlab.com/openfoam/core/openfoam.git /opt/openfoam/openfoam{{ OPENFOAM_VERSION }}
+    cd /opt/openfoam/openfoam{{ OPENFOAM_VERSION }}
     openfoam_commit=$(git rev-parse --short HEAD)
     git config --global user.email "me@example.com"
     git config --global user.name "Elwardi"
     git am -3 /opt/patches/0001-fix-working-with-CPL.patch
     git am -3 /opt/patches/0002-fix-compile-on-newer-compilers.patch
     sed -i 's/export WM_MPLIB=SYSTEMOPENMPI/export WM_MPLIB=SYSTEMMPI/' etc/bashrc
-    export MPI_ROOT="/opt/mpich"
+    export MPI_ROOT="$MPICH_DIR"
     export MPI_ARCH_INC="-isystem $MPI_ROOT/include"
     export MPI_ARCH_LIBS="-L$MPI_ROOT/lib -lmpi"
     export MPI_ARCH_FLAGS="-DOMPI_SKIP_MPICXX"
-    export FOAM_INSTALL_DIR=/usr/lib/openfoam/openfoam{{ OPENFOAM_VERSION }}
+    curl https://raw.githubusercontent.com/Crompulence/CPL_APP_OPENFOAM/{{ SOCKET_VERSION }}/SOURCEME.sh > SOURCEME.sh
+    sed -i 's/export FOAM_CPL_VERSION=.*/export FOAM_CPL_VERSION=v{{ OPENFOAM_VERSION }}/' SOURCEME.sh
+    export FOAM_INSTALL_DIR=/opt/openfoam/openfoam{{ OPENFOAM_VERSION }}
     source etc/bashrc
     export FOAM_CPL_APP_LIBBIN=${FOAM_LIBBIN}
     ./Allwmake -j$(nproc)
 
+    source etc/bashrc
+    # some debugging
+    echo "WM_PROJECT_DIR=$WM_PROJECT_DIR"
+    export WM_PROJECT_DIR=/opt/openfoam/openfoam2112
+    echo "FOAM_LIBBIN=${FOAM_LIBBIN}"   # must not be empty
+    echo "MPI_ROOT=${MPI_ROOT}"         # must not be empty
+    echo "pwd=$(pwd)"         # must not be empty
+    # ./Allwmake -j$(nproc)
+
+    exit 0
+
+    # Install CPL APP for OpenFOAM -----------
+    export FOAM_CPL_APP_LIBBIN=${FOAM_LIBBIN}
+    cd /opt/
+    git clone https://github.com/Crompulence/CPL_APP_OPENFOAM cpl_app_openfoam
+    cd cpl_app_openfoam
+        find . -name options -exec sed -i 's;$(FOAM_CPL_APP_SRC)/CPLPstream/lnInclude;$(LIB_SRC)/Pstream/mpi/lnInclude;' {} \;
+    source SOURCEME.sh; 
+    wmake src/CPLSocketFOAM
+    wmake src/solvers/CPLTestFoam
+    wmake src/solvers/CPLTestSocketFoam
+    wmake src/solvers/IcoFoam
+    wmake src/solvers/CPLIcoFoam
+    wmake src/solvers/CPLinterCondensatingEvaporatingFoam
+
+
+    # Install LAMMPS APP for LAMMPS-----------
+    cd /opt/
+    git https://github.com/Crompulence/CPL_APP_LAMMPS-DEV clone cpl_app_lammps
+    source SOURCEME.sh
+    echo "/opt/lammps/" > CODE_INST_DIR
+        # optionally change ./config/lammps_packages.in
+    cd config 
+    ./enable-packages.sh make
+    make
+
 %environment
     export MPI_ROOT="/opt/mpich"
-    export MPI_ARCH_INC="-isystem /opt/mpich/include"
-    export MPI_ARCH_LIBS="-L/opt/mpich/lib -lmpi"
+	export MPI_DIR=/opt/mpich
+    export MPI_ARCH_INC="-isystem ${MPI_ROOT}/include"
+    export MPI_ARCH_LIBS="-L${MPI_ROOT}/lib -lmpi"
     export MPI_ARCH_FLAGS="-DOMPI_SKIP_MPICXX"
     export PATH=/opt/lammps/bin:$PATH
-    export FOAM_INSTALL_DIR=/usr/lib/openfoam/openfoam{{ OPENFOAM_VERSION }}
+    export CPL_PATH="/opt/cpl"
+    export FOAM_INSTALL_DIR=/opt/openfoam/openfoam{{ OPENFOAM_VERSION }}
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:${MPI_ROOT}/lib
 
 %runscript
     if [ $# -eq 0 ]; then
         exec /bin/bash -c '
-            source /usr/lib/openfoam/openfoam{{ OPENFOAM_VERSION }}/etc/bashrc > /dev/null
+            source /opt/openfoam/openfoam{{ OPENFOAM_VERSION }}/etc/bashrc > /dev/null
+            source /opt/cpl/SOURCEME.sh > /dev/null
             /bin/bash --login
         '
     else
         exec /bin/bash -c "
-            source /usr/lib/openfoam/openfoam{{ OPENFOAM_VERSION }}/etc/bashrc > /dev/null
+            source /opt/openfoam/openfoam{{ OPENFOAM_VERSION }}/etc/bashrc > /dev/null
+            source /opt/cpl/SOURCEME.sh > /dev/null
             $@"
     fi
 
 %labels
-    Description Test applications for ESI OpenFOAM
+    Description Lammps+OpenFOAM with CPL

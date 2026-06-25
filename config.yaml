@@ -20,9 +20,11 @@ containers:
           - 2112
         lammps_version:
           - fcbc37d5a40e6dbd91148921378d28fca5294675 # MUST be long hash
+        socket_version:
+          - 51bd8208
         vtk_version:
           - 8.2.0
 pull:
-  try_to_pull: true
+  try_to_pull: false
   protocol: "oras"
   scope: "ghcr.io/foamscience"

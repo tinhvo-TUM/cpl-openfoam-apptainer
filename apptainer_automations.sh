@@ -1,6 +1,9 @@
 #!/bin/bash
 # run in repo root 
 
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+CPL_FOAM_DIR=$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null | tr -d '\n')
+
 get_tainers()
 {
     rm -rf /tmp/tainers
@@ -9,7 +12,7 @@ get_tainers()
 
 build_cpl()
 {
-    ansible-playbook /tmp/tainers/build.yaml --extra-vars "original_dir=$PWD" --extra-vars "@config.yaml"
+    APPTAINER_CONFIGDIR=$(mktemp -d) ansible-playbook /tmp/tainers/build.yaml --extra-vars "original_dir=$PWD" --extra-vars "@config.yaml" -vvv
 }
 
 run_cpl()
@@ -17,13 +20,22 @@ run_cpl()
     # get the first image file. Apptainer cannot load multiple overlay images
     # overlay=$(find . -type f -name "*.img" | head -n 1) 
     
+    # if no input, get the first file in 
+    if [ -z "$1" ]; then
+        local files=( "$CPL_FOAM_DIR"/images/projects/* )
+    else
+        local files=( "$1" )
+    fi
+    echo "SIF container image selected: $files"
+
+
     # search first for the second argument passed in command line, then image in current directory. If no image found run without
     if [ -n "$2" ]; then 
-        apptainer run --hostname cpl --sharens $1  --overlay $2
-    elif [ -n "$overlay" ]; then
-        apptainer run --hostname cpl --sharens $1  # TODO  --overlay $overlay
+        apptainer run --hostname cpl --bind "$CPL_FOAM_DIR:/opt/cpl-openfoam" --sharens $1  --overlay $2 
+    elif [ -n "$2" ]; then
+        apptainer run --hostname cpl --bind "$CPL_FOAM_DIR:/opt/cpl-openfoam" --sharens $1  # TODO  --overlay $overlay
     else 
-        apptainer run --hostname cpl --sharens $1  
+        apptainer run --hostname cpl --bind "$CPL_FOAM_DIR:/opt/cpl-openfoam" --sharens $1  
     fi 
 }
 
