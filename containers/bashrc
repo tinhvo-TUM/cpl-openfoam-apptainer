@@ -15,6 +15,10 @@ build_cpl()
     APPTAINER_CONFIGDIR=$(mktemp -d) ansible-playbook /tmp/tainers/build.yaml --extra-vars "original_dir=$PWD" --extra-vars "@config.yaml" -vvv
 }
 
+pull_cpl()
+{
+    APPTAINER_CONFIGDIR=$(mktemp -d) apptainer pull cpl-openfoam-lammps oras://ghcr.io/dtinhvo/cpl-openfoam-lammps:latest
+}
 run_cpl()
 {
     # get the first image file. Apptainer cannot load multiple overlay images

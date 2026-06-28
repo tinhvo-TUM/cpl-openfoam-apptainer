@@ -53,7 +53,6 @@ From: {{ CONTAINERS_DIR }}/basic/{{ OS_DISTRO }}-{{ OS_VERSION }}-{{MPI_IMPLEMEN
     export PYTHONPATH="$CPL_PATH/src/bindings/python:$PYTHONPATH"
     export PYTHONPATH="$CPL_PATH/utils:$PYTHONPATH"
     export CPLPY_PATH="$CPL_PATH/src/bindings/python"
-    . /cpl/bin/activate
 
 #%runscript
 #    /bin/bash -c 'cd /usr/lib/openfoam/openfoam{{ FRAMEWORK_VERSION }} && source etc/bashrc && mkdir -p $FOAM_USER_LIBBIN && mkdir -p $FOAM_USER_APPBIN'

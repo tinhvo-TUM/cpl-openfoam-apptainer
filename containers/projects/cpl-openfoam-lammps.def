@@ -24,6 +24,14 @@ From: {{ CONTAINERS_DIR }}/basic/{{ BASE_CONTAINER }}.sif
     {{ CONTAINERS_DIR }}/../partials/0002-fix-compile-on-newer-compilers.patch /opt/patches/0002-fix-compile-on-newer-compilers.patch
 
 %post -c /bin/bash
+    
+    DEBIAN_FRONTEND=noninteractive
+        apt-get update
+        apt install -y --no-install-recommends --fix-missing --fix-broken\
+            libfftw3-dev libjpeg-dev libpng-dev cmake zlib1g-dev m4 \
+            flex libfl-dev cmake bison libopenblas-dev liblapack-dev \
+            libglu1-mesa-dev freeglut3-dev
+
     # Compile VTK with MPICH
     # cd /opt
     # vtk_short=$(echo {{ VTK_VERSION }} | cut -d '.' -f 1-2)
@@ -43,19 +51,19 @@ From: {{ CONTAINERS_DIR }}/basic/{{ BASE_CONTAINER }}.sif
     # cd voro++-0.4.6 ;    make -j$(nproc) ;    make install 
 
     # Install LAMMPS -------------
-    # git clone --depth 1 https://github.com/lammps/lammps.git /opt/lammps
-    # cd /opt/lammps
-    # git fetch --depth 1 origin {{ LAMMPS_VERSION }}
-    # git checkout {{ LAMMPS_VERSION }}
-    # lammps_commit=$(git rev-parse --short HEAD)
-    # mkdir build
-    # cd build
-    # cmake -C ../cmake/presets/most.cmake \
-    # 	-DPKG_MOLECULE=yes -DPKG_DIPOLE=yes  -DPKG_KSPACE=yes -DPKG_EXTRA-PAIR=yes -DPKG_DIELECTRIC=yes -DPKG_EFF=yes\
-    # 	-DCMAKE_INSTALL_PREFIX=/opt/lammps -DPKG_VORONOI=no \
-   	#   	-DBUILD_MPI=on -DBUILD_OMP=off -DBUILD_LIB=on -DFFT=FFTW3 ../cmake
-    # make -j$(nproc)
-    # make install
+    git clone --depth 1 https://github.com/lammps/lammps.git /opt/lammps
+    cd /opt/lammps
+    git fetch --depth 1 origin {{ LAMMPS_VERSION }}
+    git checkout {{ LAMMPS_VERSION }}
+    lammps_commit=$(git rev-parse --short HEAD)
+    mkdir build
+    cd build
+    cmake -C ../cmake/presets/most.cmake \
+    	-DPKG_MOLECULE=yes -DPKG_DIPOLE=yes  -DPKG_KSPACE=yes -DPKG_EXTRA-PAIR=yes -DPKG_DIELECTRIC=yes -DPKG_EFF=yes\
+    	-DCMAKE_INSTALL_PREFIX=/opt/lammps -DPKG_VORONOI=no \
+   	  	-DBUILD_MPI=on -DBUILD_OMP=off -DBUILD_LIB=on -DFFT=FFTW3 ../cmake
+    make -j$(nproc)
+    make install
  
     # Install OpenFOAM -----------
     git clone --branch OpenFOAM-v{{ OPENFOAM_VERSION }} \
@@ -75,6 +83,8 @@ From: {{ CONTAINERS_DIR }}/basic/{{ BASE_CONTAINER }}.sif
     source etc/bashrc
     export FOAM_CPL_APP_LIBBIN=${FOAM_LIBBIN}
     ./Allwmake -j$(nproc)
+
+    # base cpl image (basic) already have cpl. no need to download and recompile
 
 %environment
     export MPI_ROOT="/opt/mpich"
